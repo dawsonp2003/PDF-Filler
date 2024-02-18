@@ -10,7 +10,7 @@ public class Message {
     private int changes = 0;
     private boolean debug;
 
-    //constructor for a Message
+    //constructor for a Message object
     public Message(boolean debug) {
         this.debug = debug;
     }

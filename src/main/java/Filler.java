@@ -20,7 +20,7 @@ public class Filler {
     /**
      * Constructor for a filler to fill out a PDF form.
      *
-     * @param dest      File location and name for the created output
+     * @param dest      File location and name for the created output.
      * @param src       File location and name for the PDF form to fill out
      * @param message   Message object to send debug/failure messages back to the main program
      * @param values    2D string array in format of { [fieldName1, fieldValue1], [fieldName2, fieldValue2]... }

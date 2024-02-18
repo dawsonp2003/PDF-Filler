@@ -43,7 +43,6 @@ import java.util.Scanner;
  * @version 0.2
  */
 public class App extends Application {
-
     //class variables
     //primitive variable for size of objects and text
     private final String filepath = "./src/main/resources/";

@@ -6,7 +6,7 @@
  */
 public class FormFormats {
     /**
-     * Method to return the format to the given specified form.
+     * Method to return the format to the given specified form
      *
      * @param form  Integer representing the number of the Form format
      * @return      format for the given Form
