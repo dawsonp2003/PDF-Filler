@@ -45,16 +45,17 @@ import java.util.Scanner;
 public class App extends Application {
     //class variables
     //primitive variable for size of objects and text
-    private final String filepath = "./src/main/resources/";
+    private final String filepath = "./resources/";
     private int initPDF;
     //javafx variables
     private Stage stage; //main screen's stage
+    private int current = 0; //current scene on the stage
     private Font normalFont;
     private Font titleFont;
     private final ColorAdjust dark = new ColorAdjust();
     private final ColorAdjust normal = new ColorAdjust();
     //default file directory for PDF
-    private File outputDirectory = new File(filepath + "OutputForms/");
+    private File outputDirectory = new File("./OutputForms/");
 
 
 
@@ -69,12 +70,6 @@ public class App extends Application {
         //saving the application's main stage
         stage = primaryStage;
 
-        //updating settings
-        getSettings();
-
-        //setting scene as main menu
-        stage.setScene(mainMenuCreator());
-
         //instantiating other variables
         dark.setBrightness(-.6);
         normal.setBrightness(1);
@@ -83,11 +78,39 @@ public class App extends Application {
         stage.setResizable(true);
         stage.setTitle("PDF Creator");
         stage.setHeight(700);
-        stage.setWidth(800);
+        stage.setWidth(1000);
+        stage.heightProperty().addListener(e -> {
+            recalculate();
+        });
+        stage.widthProperty().addListener(e -> {
+            recalculate();
+        });
         stage.show();
+
+        //updating settings
+        getSettings();
+
+        //setting scene as main menu
+        stage.setScene(mainMenuCreator());
+    }
+    //recalculating item sizes
+    private void recalculate() {
+        getSettings();
+        switch (current) {
+            case 0:
+                stage.setScene(mainMenuCreator());
+                break;
+            case 1:
+                stage.setScene(newPDFCreator());
+                break;
+            case 2:
+                stage.setScene(FormCreator(0));
+        }
     }
     //maing method to start the application
     public static void main(String[] args) {
+        System.out.println("Opening Settings");
+        System.out.println((new File("./")).getAbsolutePath());
         //launching the application
         launch(args);
     }
@@ -106,29 +129,32 @@ public class App extends Application {
         Image CowetaImage = new Image((new File(filepath + "Files/CowetaHearing.jpg")).getAbsolutePath());
         ImageView Coweta = new ImageView(CowetaImage);
         Coweta.setPreserveRatio(true);
-        Coweta.setFitWidth(.3 * stage.getWidth());
-        Image FayetteImage = new Image((new File(filepath + "Files/CowetaHearing.jpg")).getAbsolutePath());
+        Coweta.setFitWidth(.17 * stage.getWidth());
+        Image FayetteImage = new Image((new File(filepath + "Files/FayetteHearing.jpg")).getAbsolutePath());
         ImageView Fayette = new ImageView(FayetteImage);
         Fayette.setPreserveRatio(true);
-        Fayette.setFitWidth(.3 * stage.getWidth());
+        Fayette.setFitWidth(.17 * stage.getWidth());
+
         //creating title
         Label title = new Label("PDF Creator");
         title.setFont(titleFont);
         //creating HBox to hold all menu logo items
-        HBox header = new HBox(.7 * stage.getWidth());
+        HBox header = new HBox(.05 * stage.getWidth());
         header.setAlignment(Pos.CENTER);
         header.getChildren().addAll(Coweta, title, Fayette);
 
         //-creating main menu buttons
         //new PDF button
         Button newPDFButton = new Button("New PDF");
-        newPDFButton.setScaleX(.15 * stage.getWidth());
-        newPDFButton.setScaleY(.15 * stage.getHeight());
+        newPDFButton.setMinWidth(.15 * stage.getWidth());
+        newPDFButton.setMinHeight(.05 * stage.getHeight());
         newPDFButton.setFont(normalFont);
         newPDFButton.setOnAction(e -> {
             if (initPDF != -1) {
+                current = 2;
                 stage.setScene(FormCreator(initPDF));
             } else {
+                current = 1;
                 stage.setScene(newPDFCreator());
             }
         });
@@ -141,7 +167,7 @@ public class App extends Application {
         exitButton.setOnAction(e -> stage.close());
 
         //setting up menu VBox
-        VBox menu = new VBox(.3 * stage.getHeight());
+        VBox menu = new VBox(.05 * stage.getWidth());
         menu.setAlignment(Pos.CENTER);
         menu.getChildren().addAll(header, newPDFButton, exitButton);
 
@@ -161,7 +187,8 @@ public class App extends Application {
 
         //-button grid
         GridPane buttonPane = new GridPane();
-        buttonPane.setMaxWidth(.8 * stage.getWidth());
+        buttonPane.setMaxWidth(.7 * stage.getWidth());
+        buttonPane.setMinHeight(.5 * stage.getHeight());
 
         //choosing POA Form
         Button POAFormButton = new Button("POA Form");
@@ -173,25 +200,30 @@ public class App extends Application {
         buttonPane.getChildren().add(POAFormButton);
 
         //check box for auto selecting
-        HBox autoSelectBox = new HBox(10);
+        HBox autoSelectBox = new HBox(1);
         autoSelectBox.setAlignment(Pos.CENTER);
         final CheckBox autoSelect = new CheckBox();
-        autoSelect.setMinWidth(.05 * stage.getWidth());
-        autoSelect.setMinHeight(.05 * stage.getHeight());
+        autoSelect.setPrefSize(.1 * stage.getWidth(), .1 * stage.getWidth());
         autoSelect.setSelected(initPDF != -1);
+        autoSelect.selectedProperty().addListener(e -> {
+            if (!autoSelect.isSelected()) {
+                initPDF = -1;
+            }
+        });
         Label label = new Label("Automatically select PDF in the future");
         label.setFont(normalFont);
         autoSelectBox.getChildren().addAll(autoSelect, label);
 
         //POA Form button
-        POAFormButton.setOnAction(E -> {
-            stage.setScene(FormCreator(0));
-            setSettings("initPDF", (autoSelect.isSelected()) ? "0" : "-1");
+        POAFormButton.setOnAction(e -> {
+            current = 2;
             if (autoSelect.isSelected()) {
                 initPDF = 0;
             } else {
                 initPDF = -1;
             }
+            stage.setScene(FormCreator(0));
+            setSettings("initPDF", "" + initPDF);
         });
 
         //back button
@@ -199,10 +231,13 @@ public class App extends Application {
         backButton.setMinWidth(.15 * stage.getWidth());
         backButton.setMinHeight(.05 * stage.getHeight());
         backButton.setFont(normalFont);
-        backButton.setOnAction(E -> stage.setScene(mainMenuCreator()));
+        backButton.setOnAction(E -> {
+            current = 0;
+            stage.setScene(mainMenuCreator());
+        });
 
         //overall scene VBox
-        VBox formSelect = new VBox(.8 * stage.getHeight());
+        VBox formSelect = new VBox(.01 * stage.getHeight());
         formSelect.getChildren().addAll(title, buttonPane, autoSelectBox, backButton);
         formSelect.setAlignment(Pos.CENTER);
 
@@ -244,8 +279,8 @@ public class App extends Application {
             if (type.equalsIgnoreCase("Text")) {
                 //if the type is text, create a text field
                 TextField field = new TextField();
-                field.setMaxWidth(250);
-                field.setMaxHeight(25);
+                field.setMaxWidth(250 * stage.getWidth()/1000);
+                field.setMaxHeight(25 * stage.getHeight()/700);
                 field.setFont(normalFont);
 
                 //updating outputs when input is changed
@@ -259,8 +294,8 @@ public class App extends Application {
             } else if (type.equalsIgnoreCase("Dropdown")) {
                 //if the type is a combobox/dropdown, create it and add every item in format
                 ComboBox<String> field = new ComboBox<String>();
-                field.setMaxWidth(250);
-                field.setMaxHeight(25);
+                field.setMaxWidth(250 * stage.getWidth()/1000);
+                field.setMaxHeight(25 * stage.getHeight()/700);
                 for (int i = 3; i < element.length; i++) {
                     //adding every item on the format
                     field.getItems().add(element[i]);
@@ -277,8 +312,8 @@ public class App extends Application {
             } else if (type.equalsIgnoreCase("Number")) {
                 //if the type is number, create a text field
                 final TextField field = new TextField();
-                field.setMaxWidth(250);
-                field.setMaxHeight(25);
+                field.setMaxWidth(250 * stage.getWidth()/1000);
+                field.setMaxHeight(25 * stage.getHeight()/700);
                 field.setFont(normalFont);
                 field.setAccessibleHelp("Number Field");
 
@@ -301,12 +336,24 @@ public class App extends Application {
             } else if (type.equalsIgnoreCase("Percent")) {
                 //if the type is percent, create a slider with a display label next to it
                 final Slider field = new Slider(0, 100, 20);
-                field.setMaxWidth(150);
-                field.setMaxHeight(25);
+                field.setMinWidth(130 * stage.getWidth()/1000);
+                field.setMinHeight(25 * stage.getHeight()/700);
                 field.setMajorTickUnit(.1);
                 field.setMinorTickCount(0);
                 final Label display = new Label("20.0%");
                 display.setFont(normalFont);
+
+                //decrease by .1 button
+                Button decrease = new Button("-");
+                decrease.setFont(normalFont);
+                decrease.setId("decrease");
+                decrease.setOnAction(e -> field.setValue(field.getValue() - .1) );
+                decrease.setOnMouseDragged(e -> field.setValue(field.getValue() - .1));
+                //increase by .1 button
+                Button increase = new Button("+");
+                increase.setFont(normalFont);
+                increase.setOnAction(e -> field.setValue(field.getValue() + .1) );
+                increase.setOnMouseDragged(e -> field.setValue(field.getValue() + .1));
 
                 //whenever the slider is changed, change the display value
                 field.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -325,8 +372,10 @@ public class App extends Application {
                     updateValues(inputForm, outputDisplay, outputs);
                 });
 
+                //creating hbox for this
+
                 //adding the field to the specific input HBox
-                input.getChildren().addAll(field, display);
+                input.getChildren().addAll(field, decrease, increase, display);
             }
 
             //adding the next input HBox to the form
@@ -334,24 +383,14 @@ public class App extends Application {
         }
 
         //creating a HBox for inputs on left and outputs on right
-        HBox ioDisplay = new HBox(40);
+        HBox ioDisplay = new HBox(40 * stage.getWidth()/1000);
+        ioDisplay.setAlignment(Pos.CENTER);
         ioDisplay.getChildren().addAll(inputForm, outputDisplay);
-
-        //back button
-        Button backButton = new Button("Back");
-        backButton.setMinWidth(.15 * stage.getWidth());
-        backButton.setMinHeight(.05 * stage.getHeight());
-        backButton.setFont(normalFont);
-        backButton.setOnAction(E -> {
-            if (initPDF < 0) {
-                stage.setScene(newPDFCreator());
-            } else {
-                stage.setScene(mainMenuCreator());
-            }
-        });
 
         //creating a submission button
         Button submit = new Button("Submit");
+        submit.setMinWidth(.15 * stage.getWidth());
+        submit.setMinHeight(.05 * stage.getHeight());
         submit.setFont(normalFont);
         submit.setOnAction(E ->
                 pdfCreation(FileName, elements, outputs, inputForm, outputDisplay)
@@ -366,8 +405,9 @@ public class App extends Application {
             directoryChoice.setInitialDirectory(new File(filepath));
         }
         //creating the button to open the directory chooser
-        Button directoryChoiceButton = new Button("New Directory");
-        directoryChoiceButton.setMaxWidth(150);
+        Button directoryChoiceButton = new Button("Change Directory");
+        directoryChoiceButton.setMinWidth(.15 * stage.getWidth());
+        directoryChoiceButton.setMinHeight(.05 * stage.getHeight());
         directoryChoiceButton.setFont(normalFont);
         //reacting to the choice and displaying it with a label
         String temp = directoryChoice.getInitialDirectory().getPath();
@@ -397,9 +437,9 @@ public class App extends Application {
 
 
         //creating a submission HBox to hold back button, submit button, and file chooser
-        HBox submitBox = new HBox(20);
+        HBox submitBox = new HBox(20 * stage.getHeight()/700);
         submitBox.setAlignment(Pos.CENTER);
-        submitBox.getChildren().addAll(backButton, submit, directoryChoiceButton, directoryLabel);
+        submitBox.getChildren().addAll(submit, directoryChoiceButton, directoryLabel);
 
         form.getChildren().addAll(ioDisplay, submitBox);
 
@@ -440,7 +480,7 @@ public class App extends Application {
         textDialog.showAndWait();
         textDialog.close();
         String filename = textDialog.getResult();
-        if (filename == null) {
+        if (filename == null || filename.equals("")) {
             success = false;
         } else if ((new File(filename)).exists()) {
             //throwing an error if a file already exists with that name
@@ -454,7 +494,7 @@ public class App extends Application {
             for (String[] element : elements) {
                 //getting the next control element in the input form
                 Control next = (Control) ( (HBox) iterator.next() ).getChildren().get(1);
-                String value;
+                String value = null;
 
                 //Depending on the control element's type, grab a different result
                 if (next.getClass() == TextField.class) {
@@ -471,9 +511,8 @@ public class App extends Application {
                     Slider nextSlider = (Slider) next;
                     //setting the current input to the slider's value
                     value = nextSlider.getValue() + "";
-                } else {
+                } else if (next.getClass() != Button.class) {
                     //if the element in the form is unknown, throw an error
-                    System.out.println("Error");
                     formError("Invalid input type.");
                     success = false;
                     break;
@@ -493,16 +532,18 @@ public class App extends Application {
             //filling in the PDF with the gathered information
             Message message = new Message(false);
             new Filler(dest + "/" + filename +
-                    ((filename.substring(filename.length()-3).equals(".pdf")) ? "" : ".pdf"),
+                    (filename.length() < 5 || (filename.substring(filename.length()-3).equals(".pdf")) ? "" : ".pdf"),
                     src, message, values
             );
 
             //ensuring PDF production was a success
             if (message.hasMessage()) {
                 //if we got an error message back, throw the error message out
-                createPDFError(message.getMessage());
+                String msg = message.getMessage();
+                createPDFError("Filler Error: " + ((msg == null) ? "Invalid Filename" : msg));
             } else {
                 //setting stage to PDF display
+                current = 0;
                 stage.setScene(mainMenuCreator());
             }
         }
@@ -563,7 +604,6 @@ public class App extends Application {
                     if (value != null && !value.equals("")) {
                         //otherwise, set the input to the found value
                         inputs[i] = value;
-                        continue;
                     } else {
                         //setting input to null if above if is false
                         inputs[i] = null;
@@ -573,9 +613,9 @@ public class App extends Application {
                     Slider nextSlider = (Slider) next;
                     //setting the current input to the slider's value
                     inputs[i] = nextSlider.getValue() / 100;
-                } else {
+                } else if (next.getClass() != Button.class) {
                     //if the element in the form is unknown, throw an error
-                    formError("Invalid input type.");
+                    formError("Invalid input type: " + next.getClass().getTypeName());
                 }
             }
 
@@ -768,8 +808,8 @@ public class App extends Application {
             StackPane outputBox = new StackPane();
             //creating items for output box
             Rectangle box = new Rectangle(); //background box
-            box.setWidth(250);
-            box.setHeight(25);
+            box.setWidth(250 * stage.getHeight()/700);
+            box.setHeight(25 * stage.getHeight()/700);
             box.setFill(Color.DIMGRAY);
             box.setStroke(Color.FLORALWHITE);
             Label text = new Label(); //text displaying output value
@@ -803,7 +843,7 @@ public class App extends Application {
      */
     private Scene FormCreator(int formNum) {
         //creating the Form VBox
-        VBox formVBox = new VBox(40);
+        VBox formVBox = new VBox(40 * stage.getHeight()/700);
         formVBox.setAlignment(Pos.CENTER);
 
         //getting the specified form's format
@@ -826,17 +866,20 @@ public class App extends Application {
             formOutputs[i] = format[i + 3 + formLength];
         }
         //creating VBox
-        VBox formInputs = FormVBoxCreator(formElements, formOutputs, format[3 + formLength + formNumOutputs][0]);
+        VBox formInputsOutputs = FormVBoxCreator(formElements, formOutputs, format[3 + formLength + formNumOutputs][0]);
         //creating the back button
-        Button back = new Button("< Back");
+        Button back = new Button("Back");
+        back.setMinWidth(.15 * stage.getWidth());
+        back.setMinHeight(.05 * stage.getHeight());
         back.setFont(normalFont);
         back.setOnAction(e -> {
             //changing current Scene back to PDF Creator selection scene
+            current = 1;
             stage.setScene(newPDFCreator());
         });
 
         //returning the created scene
-        formVBox.getChildren().addAll(formTitle, formInputs, back);
+        formVBox.getChildren().addAll(formTitle, formInputsOutputs, back);
         return new Scene(formVBox);
     }
 
@@ -870,7 +913,7 @@ public class App extends Application {
                         initPDF = Integer.parseInt(input);
                         break;
                     case 1:
-                        outputDirectory = new File( (input.equals("null")) ? filepath + "OutputForms" : input );
+                        outputDirectory = new File( (input.equals("null")) ? filepath + "src/OutputForms" : input );
                 }
             }
             scan.close();

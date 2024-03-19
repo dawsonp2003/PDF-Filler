@@ -92,7 +92,7 @@ public class Filler {
                 }
             } catch (Exception e) {
                 //if there is an error during filling the PDF form, say so
-                message.setMessage("Writing error: " + e.getMessage());
+                message.setMessage("General error: " + e.getMessage());
             }
         }
     }
